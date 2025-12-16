@@ -1,0 +1,7 @@
+Django>=5.0.0
+Pillow>=10.0.0  # For image handling
+razorpay>=1.3.0  # Payment gateway integration
+django-crispy-forms>=2.0   # For form styling
+crispy-bootstrap4>=2022.1  # Bootstrap 4 template pack for crispy forms
+python-dotenv>=1.0.0  # For environment variables (recommended for production)
+django-environ>=0.10.0  # Alternative for environment management

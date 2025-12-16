@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Properties - HostelBook{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Search and Filter -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="GET">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="search" value="{{ search }}" placeholder="Search location...">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="city">
+                            <option value="">All Cities</option>
+                            {% for city in cities %}
+                            <option value="{{ city }}" {% if city == selected_city %}selected{% endif %}>{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="property_type">
+                            <option value="">Property Type</option>
+                            <option value="hostel" {% if selected_type == 'hostel' %}selected{% endif %}>Hostel</option>
+                            <option value="pg" {% if selected_type == 'pg' %}selected{% endif %}>PG</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" name="min_price" value="{{ min_price }}" placeholder="Min Price">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" name="max_price" value="{{ max_price }}" placeholder="Max Price">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="row">
+        <div class="col-12">
+            <h4>{{ properties.count }} Properties Found</h4>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for property in properties %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                {% if property.images.exists %}
+                    <img src="{{ property.images.first.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ property.name }}">
+                {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="fas fa-home fa-3x text-muted"></i>
+                    </div>
+                {% endif %}
+                
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ property.name }}</h5>
+                    <p class="card-text text-muted">
+                        <i class="fas fa-map-marker-alt"></i> {{ property.city }}, {{ property.state }}
+                    </p>
+                    <p class="card-text">{{ property.description|truncatewords:15 }}</p>
+                    
+                    <!-- Amenities -->
+                    <div class="mb-2">
+                        {% if property.wifi %}<span class="badge bg-info me-1">WiFi</span>{% endif %}
+                        {% if property.meals %}<span class="badge bg-info me-1">Meals</span>{% endif %}
+                        {% if property.ac %}<span class="badge bg-info me-1">AC</span>{% endif %}
+                        {% if property.parking %}<span class="badge bg-info me-1">Parking</span>{% endif %}
+                    </div>
+                    
+                    <!-- Price Range -->
+                    <div class="mb-3">
+                        <small class="text-muted">Starting from</small><br>
+                        <strong class="text-success">₹{{ property.rooms.first.daily_rate }}/day</strong>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        <a href="{% url 'property_detail' property.pk %}" class="btn btn-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No properties found</h4>
+                <p class="text-muted">Try adjusting your search criteria</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

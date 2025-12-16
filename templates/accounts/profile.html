@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Profile - HostelBook{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user"></i> My Profile</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Personal Information</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Username:</strong></td>
+                                    <td>{{ user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td>{{ user.email }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>First Name:</strong></td>
+                                    <td>{{ user.first_name|default:'-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Last Name:</strong></td>
+                                    <td>{{ user.last_name|default:'-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Phone:</strong></td>
+                                    <td>{{ user.phone_number|default:'-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>User Type:</strong></td>
+                                    <td>
+                                        <span class="badge bg-info">{{ user.get_user_type_display }}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Joined:</strong></td>
+                                    <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Account Status</h6>
+                            <div class="mb-3">
+                                {% if user.is_verified %}
+                                    <span class="badge bg-success fs-6">
+                                        <i class="fas fa-check-circle"></i> Verified Account
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning fs-6">
+                                        <i class="fas fa-exclamation-circle"></i> Pending Verification
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            {% if user.user_type == 'owner' %}
+                                <h6>Business Information</h6>
+                                {% if user.ownerprofile %}
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Business Name:</strong></td>
+                                            <td>{{ user.ownerprofile.business_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Document Type:</strong></td>
+                                            <td>{{ user.ownerprofile.get_document_type_display }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Verification Status:</strong></td>
+                                            <td>
+                                                {% if user.ownerprofile.verification_status == 'approved' %}
+                                                    <span class="badge bg-success">Approved</span>
+                                                {% elif user.ownerprofile.verification_status == 'pending' %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Rejected</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                {% else %}
+                                    <p class="text-muted">No business information submitted</p>
+                                    <a href="{% url 'owner_register' %}" class="btn btn-warning btn-sm">Submit Documents</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            {% if user.user_type == 'user' %}
+            <!-- Recent Activity for Users -->
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if has_bookings %}
+                        <p><strong>Total Bookings:</strong> {{ total_bookings }}</p>
+                        <p><strong>Active Bookings:</strong> {{ active_bookings }}</p>
+                        <a href="{% url 'booking_list' %}" class="btn btn-info btn-sm">View All Bookings</a>
+                    {% else %}
+                        <p class="text-muted">No booking history</p>
+                        <a href="{% url 'property_list' %}" class="btn btn-primary btn-sm">Browse Properties</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% elif user.user_type == 'owner' %}
+            <!-- Business Stats for Owners -->
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Business Stats</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Properties:</strong> {{ total_properties }}</p>
+                    <p><strong>Total Rooms:</strong> {{ total_rooms }}</p>
+                    {% if user.is_verified %}
+                        <a href="{% url 'add_property' %}" class="btn btn-success btn-sm">Add Property</a>
+                    {% else %}
+                        <small class="text-muted">Complete verification to manage properties</small>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'profile' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" class="form-control" name="phone_number" value="{{ user.phone_number }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

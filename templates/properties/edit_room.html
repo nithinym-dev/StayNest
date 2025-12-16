@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit Room {{ room.room_number }} - {{ room.property_obj.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .room-edit-container {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    }
+    .form-section {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .form-section h5 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .room-preview {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .room-preview h4 {
+        margin-bottom: 15px;
+    }
+    .room-preview .badge {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+        margin-right: 5px;
+    }
+    .amenity-toggle {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    .amenity-toggle:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .price-input {
+        font-size: 1.2rem;
+        padding: 10px 15px;
+    }
+    .price-input::before {
+        content: '₹';
+        position: absolute;
+        left: 25px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'property_detail' room.property_obj.pk %}">{{ room.property_obj.name }}</a></li>
+                    <li class="breadcrumb-item active">Edit Room {{ room.room_number }}</li>
+                </ol>
+            </nav>
+
+            <div class="room-edit-container">
+                <!-- Room Preview -->
+                <div class="room-preview">
+                    <h4><i class="fas fa-bed"></i> Room {{ room.room_number }}</h4>
+                    <div class="mb-3">
+                        <span class="badge bg-primary">{{ room.get_room_type_display }}</span>
+                        <span class="badge bg-info">Capacity: {{ room.capacity }}</span>
+                        {% if room.attached_bathroom %}
+                        <span class="badge bg-success"><i class="fas fa-bath"></i> Attached Bathroom</span>
+                        {% endif %}
+                        {% if room.balcony %}
+                        <span class="badge bg-success"><i class="fas fa-door-open"></i> Balcony</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Basic Details -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-info-circle"></i> Basic Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.room_number|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.room_type|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.capacity|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-tags"></i> Pricing</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ form.daily_rate|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.monthly_rate|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.security_deposit|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Amenities -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-concierge-bell"></i> Room Amenities</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="amenity-toggle">
+                                    {{ form.attached_bathroom }}
+                                    <label class="form-check-label ms-2" for="{{ form.attached_bathroom.id_for_label }}">
+                                        <i class="fas fa-bath text-primary"></i> Attached Bathroom
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="amenity-toggle">
+                                    {{ form.balcony }}
+                                    <label class="form-check-label ms-2" for="{{ form.balcony.id_for_label }}">
+                                        <i class="fas fa-door-open text-primary"></i> Balcony
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{% url 'property_detail' room.property_obj.pk %}" class="btn btn-secondary me-2">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Add rupee symbol to price inputs
+    const priceInputs = document.querySelectorAll('input[type="number"]');
+    priceInputs.forEach(input => {
+        if (input.name.includes('rate') || input.name.includes('deposit')) {
+            input.classList.add('price-input');
+            input.style.paddingLeft = '25px';
+        }
+    });
+});
+</script>
+{% endblock %} 

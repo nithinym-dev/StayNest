@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Book {{ room.property_obj.name }} - HostelBook{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-calendar-check"></i> Book Your Stay</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="bookingForm">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'property_detail' room.property_obj.pk %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Proceed to Payment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Booking Summary -->
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Booking Summary</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ room.property_obj.name }}</h6>
+                    <p class="text-muted">Room {{ room.room_number }} - {{ room.get_room_type_display }}</p>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <span>Daily Rate:</span>
+                        <span>₹{{ room.daily_rate }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Monthly Rate:</span>
+                        <span>₹{{ room.monthly_rate }}</span>
+                    </div>
+                    {% if room.security_deposit > 0 %}
+                    <div class="d-flex justify-content-between">
+                        <span>Security Deposit:</span>
+                        <span>₹{{ room.security_deposit }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <strong>Total Amount:</strong>
+                        <strong id="totalAmount">-</strong>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt"></i> Secure payment powered by Razorpay
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const bookingTypeField = document.getElementById('id_booking_type');
+    const checkInField = document.getElementById('id_check_in_date');
+    const checkOutField = document.getElementById('id_check_out_date');
+    const totalAmountSpan = document.getElementById('totalAmount');
+    
+    const dailyRate = {{ room.daily_rate }};
+    const monthlyRate = {{ room.monthly_rate }};
+    const securityDeposit = {{ room.security_deposit }};
+    
+    function calculateTotal() {
+        const bookingType = bookingTypeField.value;
+        const checkIn = new Date(checkInField.value);
+        const checkOut = new Date(checkOutField.value);
+        
+        if (checkIn && checkOut && checkOut > checkIn) {
+            const timeDiff = checkOut.getTime() - checkIn.getTime();
+            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            
+            let total = 0;
+            if (bookingType === 'daily') {
+                total = daysDiff * dailyRate;
+            } else if (bookingType === 'monthly') {
+                const months = daysDiff / 30;
+                total = months * monthlyRate;
+            }
+            
+            total += securityDeposit;
+            totalAmountSpan.textContent = '₹' + total.toFixed(2);
+        } else {
+            totalAmountSpan.textContent = '-';
+        }
+    }
+    
+    bookingTypeField.addEventListener('change', calculateTotal);
+    checkInField.addEventListener('change', calculateTotal);
+    checkOutField.addEventListener('change', calculateTotal);
+});
+</script>
+{% endblock %}

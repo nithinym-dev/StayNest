@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ property.name }} - HostelBook{% endblock %}
+
+{% block extra_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Property Header -->
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ property.name }}</h2>
+            <p class="text-muted">
+                <i class="fas fa-map-marker-alt"></i> {{ property.address }}, {{ property.city }}, {{ property.state }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="badge bg-primary fs-6">{{ property.get_property_type_display }}</span>
+        </div>
+    </div>
+
+    <!-- Property Images -->
+    {% if property.images.exists %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div id="propertyCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for image in property.images.all %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <img src="{{ image.image.url }}" class="d-block w-100" style="height: 400px; object-fit: cover;" alt="{{ image.caption }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if property.images.count > 1 %}
+                <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Property Details -->
+        <div class="col-md-8">
+            <!-- Description -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Description</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ property.description }}</p>
+                </div>
+            </div>
+
+            <!-- Amenities -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-star"></i> Amenities</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% if property.wifi %}
+                            <p><i class="fas fa-wifi text-success"></i> WiFi Available</p>
+                            {% endif %}
+                            {% if property.meals %}
+                            <p><i class="fas fa-utensils text-success"></i> Meals Provided</p>
+                            {% endif %}
+                            {% if property.ac %}
+                            <p><i class="fas fa-snowflake text-success"></i> Air Conditioning</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if property.laundry %}
+                            <p><i class="fas fa-tshirt text-success"></i> Laundry Service</p>
+                            {% endif %}
+                            {% if property.parking %}
+                            <p><i class="fas fa-car text-success"></i> Parking Available</p>
+                            {% endif %}
+                            {% if property.security %}
+                            <p><i class="fas fa-shield-alt text-success"></i> 24/7 Security</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Rooms -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-bed"></i> Available Rooms</h5>
+                    {% if user == property.owner %}
+                    <a href="{% url 'add_room' property.id %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Add Room
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% for room in rooms %}
+                    <div class="border rounded p-3 mb-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6>Room {{ room.room_number }}</h6>
+                                <p class="mb-1">
+                                    <span class="badge bg-secondary">{{ room.get_room_type_display }}</span>
+                                    <span class="badge bg-info">Capacity: {{ room.capacity }}</span>
+                                </p>
+                                <p class="mb-1">
+                                    <small class="text-muted">Available spots: {{ room.available_spots }}</small>
+                                </p>
+                                {% if room.attached_bathroom %}
+                                <small class="text-success"><i class="fas fa-check"></i> Attached Bathroom</small>
+                                {% endif %}
+                                {% if room.balcony %}
+                                <small class="text-success"><i class="fas fa-check"></i> Balcony</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="mb-2">
+                                    <strong class="text-primary">₹{{ room.daily_rate }}/day</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <strong class="text-success">₹{{ room.monthly_rate }}/month</strong>
+                                </div>
+                                {% if room.security_deposit > 0 %}
+                                <small class="text-muted">Security: ₹{{ room.security_deposit }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                {% if user == room.property_obj.owner %}
+                                    <a href="{% url 'edit_room' room.pk %}" class="btn btn-warning w-100 mb-2">
+                                        <i class="fas fa-edit"></i> Edit Room
+                                    </a>
+                                {% elif user.is_authenticated and user.user_type == 'user' %}
+                                    {% if room.available_spots > 0 %}
+                                    <a href="{% url 'book_room' room.pk %}" class="btn btn-primary w-100">Book Now</a>
+                                    {% else %}
+                                    <button class="btn btn-secondary w-100" disabled>Fully Occupied</button>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{% url 'login' %}" class="btn btn-outline-primary w-100">Login to Book</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No rooms available at the moment.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Owner Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-user"></i> Property Owner</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>{{ property.owner.first_name|default:property.owner.username }}</strong></p>
+                    <p class="text-muted">{{ property.owner.email }}</p>
+                    {% if property.owner.is_verified %}
+                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> Verified Owner</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Location Map -->
+            {% if property.latitude and property.longitude %}
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-map"></i> Location</h5>
+                </div>
+                <div class="card-body">
+                    <div id="map" style="height: 300px; width: 100%; border-radius: 8px;"></div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+{% if property.latitude and property.longitude %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map
+        var map = L.map('map').setView([{{ property.latitude }}, {{ property.longitude }}], 15);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Add marker for property location
+        var marker = L.marker([{{ property.latitude }}, {{ property.longitude }}])
+            .addTo(map)
+            .bindPopup("{{ property.name }}<br>{{ property.address }}");
+        
+        // Open popup by default
+        marker.openPopup();
+    });
+</script>
+{% endif %}
+{% endblock %}
